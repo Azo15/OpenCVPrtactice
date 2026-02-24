@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 
 # 1. Boş (siyah) bir görüntü oluştur (512x512 piksel)
-# Görüntü işleme dersinde her şey bir matristir!
 canvas = np.zeros((512, 512, 3), dtype="uint8")
 
 # 2. Üzerine bir dikdörtgen çiz (Mavi renk)
