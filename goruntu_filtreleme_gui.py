@@ -7,26 +7,36 @@ from PIL import Image, ImageTk
 class FiltreUygulamasi:
     def __init__(self, pencere):
         self.pencere = pencere
-        self.pencere.title("Görüntü Yumuşatıcı - 4 Filtre Testi")
+        self.pencere.title("Gelişmiş Görüntü Filtreleme")
         
         self.orjinal_resim = None
         self.islenmis_resim = None
 
         # --- Arayüz Bileşenleri ---
-        self.buton_sec = tk.Button(pencere, text="Gözat (Resim Seç)", command=self.resim_yukle, bg="lightblue")
-        self.buton_sec.pack(pady=10)
+        ust_cerceve = tk.Frame(pencere)
+        ust_cerceve.pack(pady=10)
+
+        self.buton_sec = tk.Button(ust_cerceve, text="Gözat (Resim Seç)", command=self.resim_yukle, bg="lightblue", width=15)
+        self.buton_sec.pack(side=tk.LEFT, padx=5)
+
+        self.buton_kaydet = tk.Button(ust_cerceve, text="Resmi Kaydet", command=self.resim_kaydet, bg="lightgreen", width=15)
+        self.buton_kaydet.pack(side=tk.LEFT, padx=5)
 
         self.filtre_var = tk.StringVar(value="blur")
-        filtre_cerceve = tk.LabelFrame(pencere, text="Filtre Yöntemi Seçin")
+        filtre_cerceve = tk.LabelFrame(pencere, text="Filtre / İşlem Seçin")
         filtre_cerceve.pack(padx=10, pady=5)
         
-        # Dokümanda belirtilen 4 yumuşatma fonksiyonu [cite: 181]
-        tk.Radiobutton(filtre_cerceve, text="Averaging", variable=self.filtre_var, value="blur", command=self.filtre_uygula).pack(side=tk.LEFT)
-        tk.Radiobutton(filtre_cerceve, text="Gaussian", variable=self.filtre_var, value="gaussian", command=self.filtre_uygula).pack(side=tk.LEFT)
-        tk.Radiobutton(filtre_cerceve, text="Median", variable=self.filtre_var, value="median", command=self.filtre_uygula).pack(side=tk.LEFT)
-        tk.Radiobutton(filtre_cerceve, text="Bilateral", variable=self.filtre_var, value="bilateral", command=self.filtre_uygula).pack(side=tk.LEFT)
+        # Filtre seçenekleri
+        filtreler = [
+            ("Averaging", "blur"), ("Gaussian", "gaussian"), 
+            ("Median", "median"), ("Bilateral", "bilateral"),
+            ("Canny Kenar", "canny"), ("Gri Tonlama", "gray")
+        ]
 
-        self.kernel_label = tk.Label(pencere, text="Kernel Boyutu: 5")
+        for text, mode in filtreler:
+            tk.Radiobutton(filtre_cerceve, text=text, variable=self.filtre_var, value=mode, command=self.filtre_uygula).pack(side=tk.LEFT, padx=2)
+
+        self.kernel_label = tk.Label(pencere, text="Filtre Gücü (Kernel): 5")
         self.kernel_label.pack()
         
         self.trackbar = tk.Scale(pencere, from_=1, to=51, orient=tk.HORIZONTAL, command=self.trackbar_guncelle)
@@ -40,24 +50,40 @@ class FiltreUygulamasi:
         yol = filedialog.askopenfilename(filetypes=[("Resim Dosyaları", "*.jpg *.jpeg *.png *.bmp")])
         if yol:
             try:
-                # Türkçe karakter içeren yolları güvenli okuma yöntemi
                 with open(yol, "rb") as f:
                     chunk = f.read()
                 arr = np.frombuffer(chunk, dtype=np.uint8)
                 self.orjinal_resim = cv2.imdecode(arr, cv2.IMREAD_COLOR)
 
                 if self.orjinal_resim is not None:
-                    print(f"Resim yüklendi: {yol}")
                     self.filtre_uygula()
                 else:
                     messagebox.showerror("Hata", "Resim dosyası açılamadı!")
             except Exception as e:
                 messagebox.showerror("Hata", f"Hata: {e}")
 
+    def resim_kaydet(self):
+        if self.islenmis_resim is None:
+            messagebox.showwarning("Uyarı", "Kaydedilecek işlenmiş bir resim yok!")
+            return
+            
+        yol = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG", "*.png"), ("JPG", "*.jpg"), ("Tüm Dosyalar", "*.*")])
+        if yol:
+            # Türkçe karakter desteği için imencode kullanıyoruz
+            uzanti = yol.split('.')[-1].lower()
+            if uzanti == "jpg": uzanti = "jpeg"
+            is_success, buffer = cv2.imencode(f".{uzanti}", self.islenmis_resim)
+            if is_success:
+                with open(yol, "wb") as f:
+                    f.write(buffer)
+                messagebox.showinfo("Başarılı", "Resim kaydedildi.")
+            else:
+                messagebox.showerror("Hata", "Resim kaydedilirken bir sorun oluştu.")
+
     def trackbar_guncelle(self, val):
         k = int(val)
         if k % 2 == 0: k += 1
-        self.kernel_label.config(text=f"Kernel Boyutu: {k}")
+        self.kernel_label.config(text=f"Filtre Gücü (Kernel): {k}")
         self.filtre_uygula()
 
     def filtre_uygula(self):
@@ -70,22 +96,28 @@ class FiltreUygulamasi:
         mod = self.filtre_var.get()
 
         if mod == "blur":
-            # Averaging (Ortalama) Filtresi [cite: 188, 243]
             self.islenmis_resim = cv2.blur(self.orjinal_resim, (k, k))
         elif mod == "gaussian":
-            # Gaussian Filtresi [cite: 250, 252]
             self.islenmis_resim = cv2.GaussianBlur(self.orjinal_resim, (k, k), 0)
         elif mod == "median":
-            # Median (Medyan) Filtresi [cite: 264, 266]
             self.islenmis_resim = cv2.medianBlur(self.orjinal_resim, k)
         elif mod == "bilateral":
-            # Bilateral (İki Taraflı) Filtre [cite: 277, 283]
             self.islenmis_resim = cv2.bilateralFilter(self.orjinal_resim, k, 75, 75)
+        elif mod == "canny":
+            # Trackbar değerini eşik (threshold) olarak kullanıyoruz
+            gray = cv2.cvtColor(self.orjinal_resim, cv2.COLOR_BGR2GRAY)
+            self.islenmis_resim = cv2.Canny(gray, k*2, k*5)
+        elif mod == "gray":
+            self.islenmis_resim = cv2.cvtColor(self.orjinal_resim, cv2.COLOR_BGR2GRAY)
 
         self.resmi_goster(self.islenmis_resim)
 
     def resmi_goster(self, img):
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if len(img.shape) == 2: # Eğer gri tonlamaysa RGB'ye çevir ki PIL gösterebilsin
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+        else:
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            
         img_pil = Image.fromarray(img_rgb)
         img_pil.thumbnail((700, 500))
         img_tk = ImageTk.PhotoImage(img_pil)
