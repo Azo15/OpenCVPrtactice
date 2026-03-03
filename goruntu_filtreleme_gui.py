@@ -45,6 +45,20 @@ class FiltreUygulamasi:
         self.trackbar.set(5)
         self.trackbar.pack(fill=tk.X, padx=20)
 
+        # --- Parlaklık ve Kontrast Kontrolleri ---
+        ayar_cerceve = tk.Frame(pencere)
+        ayar_cerceve.pack(fill=tk.X, padx=20, pady=5)
+
+        tk.Label(ayar_cerceve, text="Parlaklık:").pack(side=tk.LEFT)
+        self.parlaklik_scale = tk.Scale(ayar_cerceve, from_=-100, to=100, orient=tk.HORIZONTAL, command=lambda x: self.filtre_uygula())
+        self.parlaklik_scale.set(0)
+        self.parlaklik_scale.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        tk.Label(ayar_cerceve, text="Kontrast:").pack(side=tk.LEFT)
+        self.kontrast_scale = tk.Scale(ayar_cerceve, from_=0, to=3, resolution=0.1, orient=tk.HORIZONTAL, command=lambda x: self.filtre_uygula())
+        self.kontrast_scale.set(1)
+        self.kontrast_scale.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
         self.panel = tk.Label(pencere, text="Henüz bir resim seçilmedi.")
         self.panel.pack(padx=10, pady=10)
 
@@ -97,36 +111,39 @@ class FiltreUygulamasi:
         
         mod = self.filtre_var.get()
 
+        # 1. Filtreyi Uygula
         if mod == "blur":
-            self.islenmis_resim = cv2.blur(self.orjinal_resim, (k, k))
+            img = cv2.blur(self.orjinal_resim, (k, k))
         elif mod == "gaussian":
-            self.islenmis_resim = cv2.GaussianBlur(self.orjinal_resim, (k, k), 0)
+            img = cv2.GaussianBlur(self.orjinal_resim, (k, k), 0)
         elif mod == "median":
-            self.islenmis_resim = cv2.medianBlur(self.orjinal_resim, k)
+            img = cv2.medianBlur(self.orjinal_resim, k)
         elif mod == "bilateral":
-            self.islenmis_resim = cv2.bilateralFilter(self.orjinal_resim, k, 75, 75)
+            img = cv2.bilateralFilter(self.orjinal_resim, k, 75, 75)
         elif mod == "canny":
-            # Trackbar değerini eşik (threshold) olarak kullanıyoruz
             gray = cv2.cvtColor(self.orjinal_resim, cv2.COLOR_BGR2GRAY)
-            self.islenmis_resim = cv2.Canny(gray, k*2, k*5)
+            img = cv2.Canny(gray, k*2, k*5)
         elif mod == "gray":
-            self.islenmis_resim = cv2.cvtColor(self.orjinal_resim, cv2.COLOR_BGR2GRAY)
+            img = cv2.cvtColor(self.orjinal_resim, cv2.COLOR_BGR2GRAY)
         elif mod == "sharpen":
-            # Keskinleştirme çekirdeği (kernel)
             kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-            self.islenmis_resim = cv2.filter2D(self.orjinal_resim, -1, kernel)
+            img = cv2.filter2D(self.orjinal_resim, -1, kernel)
         elif mod == "laplacian":
-            # Laplacian filtresi (kenarları keskinleştirir)
             laplacian = cv2.Laplacian(self.orjinal_resim, cv2.CV_64F)
-            self.islenmis_resim = cv2.convertScaleAbs(laplacian)
+            img = cv2.convertScaleAbs(laplacian)
         elif mod == "erode":
-            # Aşındırma (Erosion)
             kernel = np.ones((k, k), np.uint8)
-            self.islenmis_resim = cv2.erode(self.orjinal_resim, kernel, iterations=1)
+            img = cv2.erode(self.orjinal_resim, kernel, iterations=1)
         elif mod == "dilate":
-            # Genişletme (Dilation)
             kernel = np.ones((k, k), np.uint8)
-            self.islenmis_resim = cv2.dilate(self.orjinal_resim, kernel, iterations=1)
+            img = cv2.dilate(self.orjinal_resim, kernel, iterations=1)
+        else:
+            img = self.orjinal_resim.copy()
+
+        # 2. Parlaklık ve Kontrast Ayarlarını Uygula
+        alpha = self.kontrast_scale.get()
+        beta = self.parlaklik_scale.get()
+        self.islenmis_resim = cv2.convertScaleAbs(img, alpha=alpha, beta=beta)
 
         self.resmi_goster(self.islenmis_resim)
 
