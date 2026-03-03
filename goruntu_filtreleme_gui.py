@@ -11,6 +11,7 @@ class FiltreUygulamasi:
         
         self.orjinal_resim = None
         self.islenmis_resim = None
+        self.cap = None # Kamera nesnesi
 
         # --- Arayüz Bileşenleri ---
         ust_cerceve = tk.Frame(pencere)
@@ -18,6 +19,9 @@ class FiltreUygulamasi:
 
         self.buton_sec = tk.Button(ust_cerceve, text="Gözat (Resim Seç)", command=self.resim_yukle, bg="lightblue", width=15)
         self.buton_sec.pack(side=tk.LEFT, padx=5)
+
+        self.buton_webcam = tk.Button(ust_cerceve, text="Webcam Başlat", command=self.webcam_kontrol, bg="orange", width=15)
+        self.buton_webcam.pack(side=tk.LEFT, padx=5)
 
         self.buton_kaydet = tk.Button(ust_cerceve, text="Resmi Kaydet", command=self.resim_kaydet, bg="lightgreen", width=15)
         self.buton_kaydet.pack(side=tk.LEFT, padx=5)
@@ -63,6 +67,7 @@ class FiltreUygulamasi:
         self.panel.pack(padx=10, pady=10)
 
     def resim_yukle(self):
+        self.webcam_durdur() # Resim yüklenirken kamera kapansın
         yol = filedialog.askopenfilename(filetypes=[("Resim Dosyaları", "*.jpg *.jpeg *.png *.bmp")])
         if yol:
             try:
@@ -77,6 +82,33 @@ class FiltreUygulamasi:
                     messagebox.showerror("Hata", "Resim dosyası açılamadı!")
             except Exception as e:
                 messagebox.showerror("Hata", f"Hata: {e}")
+
+    def webcam_kontrol(self):
+        if self.cap is None:
+            self.cap = cv2.VideoCapture(0)
+            if not self.cap.isOpened():
+                messagebox.showerror("Hata", "Kamera açılamadı!")
+                self.cap = None
+                return
+            self.buton_webcam.config(text="Webcam Durdur", bg="red")
+            self.webcam_guncelle()
+        else:
+            self.webcam_durdur()
+
+    def webcam_durdur(self):
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+            self.buton_webcam.config(text="Webcam Başlat", bg="orange")
+
+    def webcam_guncelle(self):
+        if self.cap is not None:
+            ret, frame = self.cap.read()
+            if ret:
+                self.orjinal_resim = frame
+                self.filtre_uygula()
+                # 30ms sonra tekrar çağır (~33 FPS)
+                self.pencere.after(30, self.webcam_guncelle)
 
     def resim_kaydet(self):
         if self.islenmis_resim is None:
