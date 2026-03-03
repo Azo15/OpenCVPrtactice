@@ -31,7 +31,8 @@ class FiltreUygulamasi:
             ("Averaging", "blur"), ("Gaussian", "gaussian"), 
             ("Median", "median"), ("Bilateral", "bilateral"),
             ("Canny Kenar", "canny"), ("Gri Tonlama", "gray"),
-            ("Keskinleştir", "sharpen"), ("Laplacian", "laplacian")
+            ("Keskinleştir", "sharpen"), ("Laplacian", "laplacian"),
+            ("Erosion", "erode"), ("Dilation", "dilate")
         ]
 
         for text, mode in filtreler:
@@ -118,6 +119,14 @@ class FiltreUygulamasi:
             # Laplacian filtresi (kenarları keskinleştirir)
             laplacian = cv2.Laplacian(self.orjinal_resim, cv2.CV_64F)
             self.islenmis_resim = cv2.convertScaleAbs(laplacian)
+        elif mod == "erode":
+            # Aşındırma (Erosion)
+            kernel = np.ones((k, k), np.uint8)
+            self.islenmis_resim = cv2.erode(self.orjinal_resim, kernel, iterations=1)
+        elif mod == "dilate":
+            # Genişletme (Dilation)
+            kernel = np.ones((k, k), np.uint8)
+            self.islenmis_resim = cv2.dilate(self.orjinal_resim, kernel, iterations=1)
 
         self.resmi_goster(self.islenmis_resim)
 
