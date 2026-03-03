@@ -30,7 +30,8 @@ class FiltreUygulamasi:
         filtreler = [
             ("Averaging", "blur"), ("Gaussian", "gaussian"), 
             ("Median", "median"), ("Bilateral", "bilateral"),
-            ("Canny Kenar", "canny"), ("Gri Tonlama", "gray")
+            ("Canny Kenar", "canny"), ("Gri Tonlama", "gray"),
+            ("Keskinleştir", "sharpen"), ("Laplacian", "laplacian")
         ]
 
         for text, mode in filtreler:
@@ -109,6 +110,14 @@ class FiltreUygulamasi:
             self.islenmis_resim = cv2.Canny(gray, k*2, k*5)
         elif mod == "gray":
             self.islenmis_resim = cv2.cvtColor(self.orjinal_resim, cv2.COLOR_BGR2GRAY)
+        elif mod == "sharpen":
+            # Keskinleştirme çekirdeği (kernel)
+            kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+            self.islenmis_resim = cv2.filter2D(self.orjinal_resim, -1, kernel)
+        elif mod == "laplacian":
+            # Laplacian filtresi (kenarları keskinleştirir)
+            laplacian = cv2.Laplacian(self.orjinal_resim, cv2.CV_64F)
+            self.islenmis_resim = cv2.convertScaleAbs(laplacian)
 
         self.resmi_goster(self.islenmis_resim)
 
