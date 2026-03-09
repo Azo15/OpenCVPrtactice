@@ -6,7 +6,7 @@ def nothing(x):
     pass
 
 
-# 1. '8.jpg' dosyasını yükle
+# 1. '8.jpg' dosyasını yükleeref
 # Görüntü ikili (binary) olmalıdır [cite: 774]
 img = cv2.imread('8.jpg', 0)
 
