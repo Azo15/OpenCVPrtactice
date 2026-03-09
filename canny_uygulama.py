@@ -5,7 +5,7 @@ import numpy as np
 def nothing(x):
     pass
 
-# 1. Kamerayı başlat
+# 1. Kamerayı başlat    
 cap = cv2.VideoCapture(0)
 
 # 2. Bir pencere oluştur ve Trackbar'ları ekle [cite: 175]
