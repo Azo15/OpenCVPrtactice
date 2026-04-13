@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 # 1. Görüntüyü yükle
-img = cv2.imread('building.png')
+img = cv2.imread('building.jpeg')
 # 2. Gri tonlamaya çevir
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 # 3. Kenar tespiti (Canny) uygula
